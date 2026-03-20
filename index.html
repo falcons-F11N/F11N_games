@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imposter F11N - Unlimited Players</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: url('bg.png') no-repeat center center fixed; 
+            background-size: cover;
+            color: white; text-align: center; margin: 0; padding: 0; 
+            display: flex; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden;
+        }
+        .container { 
+            width: 90%; max-width: 450px; 
+            background: rgba(15, 23, 42, 0.96); 
+            padding: 20px; border-radius: 25px; border: 3px solid #38bdf8; 
+            backdrop-filter: blur(15px); box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
+            max-height: 90vh; overflow-y: auto; /* عشان لو اللاعبين كتروا تقدر تسكرول */
+        }
+        h1 { color: #38bdf8; font-size: 28px; margin-bottom: 10px; }
+        .p-row { display: flex; align-items: center; justify-content: center; gap: 5px; }
+        input { 
+            width: 70%; padding: 12px; margin: 5px 0; 
+            border-radius: 10px; border: 1px solid #334155; 
+            background: #0f172a; color: white; font-size: 16px; outline: none;
+        }
+        .add-btn { background: #10b981; width: 45%; font-size: 16px; padding: 10px; }
+        .del-btn { background: #f43f5e; width: 40px; height: 40px; border-radius: 10px; padding: 0; }
+        button { 
+            background: #38bdf8; color: #0f172a; border: none; 
+            padding: 14px; border-radius: 12px; font-weight: bold; 
+            width: 90%; margin: 10px 0; font-size: 18px; 
+            cursor: pointer; transition: 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .cat-btn { background: #6366f1; color: white; width: 100% !important; font-size: 16px !important; }
+        .hidden { display: none; }
+        #timer-box { font-size: 50px; color: #f43f5e; font-weight: bold; }
+        .res-box { 
+            background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; 
+            border: 3px dashed #fbbf24; margin: 15px 0; font-size: 26px; line-height: 1.5; 
+        }
+    </style>
+</head>
+<body>
+    <audio id="clickS" src="click.mp3" preload="auto"></audio>
+    <audio id="laughS" src="laugh.mp3" preload="auto"></audio>
+
+    <div class="container">
+        <h1>🕵️ Imposter - F11N</h1>
+        
+        <div id="step1">
+            <p>سجل أسامي الشلة:</p>
+            <div id="players-list">
+                <div class="p-row"><input type="text" class="p-name" placeholder="اسم اللاعب"></div>
+                <div class="p-row"><input type="text" class="p-name" placeholder="اسم اللاعب"></div>
+                <div class="p-row"><input type="text" class="p-name" placeholder="اسم اللاعب"></div>
+            </div>
+            <button class="add-btn" onclick="play(); addPlayerInput();">➕ إضافة لاعب</button>
+            <button onclick="play(); startApp();">ادخل على التقيل 🔥</button>
+        </div>
+
+        <div id="step2" class="hidden">
+            <h3>اختار الموضوع:</h3>
+            <div class="cat-grid">
+                <button class="cat-btn" onclick="play(); pick('وظائف')">👷 وظائف</button>
+                <button class="cat-btn" onclick="play(); pick('كورة')">⚽ كورة</button>
+                <button class="cat-btn" onclick="play(); pick('بلاد')">🌍 بلاد</button>
+                <button class="cat-btn" onclick="play(); pick('أكلات')">🍔 أكلات</button>
+                <button class="cat-btn" onclick="play(); pick('أفلام')">🎬 سينما</button>
+                <button class="cat-btn" onclick="play(); pick('منوعات')">🎲 منوعات</button>
+            </div>
+        </div>
+
+        <div id="step3" class="hidden">
+            <h2 id="curr-p" style="color:#fbbf24;"></h2>
+            <button onclick="play(); showWord();">أنا جاهز يا عم</button>
+        </div>
+
+        <div id="step4" class="hidden">
+            <div class="res-box" id="word-disp"></div>
+            <button onclick="play(); nextP();">خبي بسرعة 🤫</button>
+        </div>
+
+        <div id="step5" class="hidden">
+            <div id="timer-box">60</div>
+            <h2 style="color:#f43f5e;">ولعوها مناقشة! 🔥</h2>
+            <button onclick="location.reload();" style="background:#94a3b8; width: 60%;">لعبة جديدة</button>
+        </div>
+    </div>
+
+    <script>
+        const library = {
+            'وظائف': ['طيار','مأذون','يوتيوبر','ميكانيكي','محامي','جزار','مصور','غطاس','حرامي غسيل','دكتور'],
+            'كورة': ['محمد صلاح','ريال مدريد','مانشستر سيتي','ضربة جزاء','تسلل','كأس العالم','الأهلي','الزمالك','هالاند','ميسي'],
+            'بلاد': ['أسوان','القاهرة','دبي','فلسطين','إسبانيا','اليابان','المغرب','تونس','فرنسا','الصين'],
+            'أكلات': ['كشري','حواوشي','فتة','بيتزا','ملوخية','سوشي','ورق عنب','برجر','ممبار','شاورما'],
+            'أفلام': ['اللمبي','الفيل الأزرق','ولاد رزق','تيتو','إبراهيم الأبيض','كازابلانكا','سبايدر مان','جوكر'],
+            'منوعات': ['شاحن','سماعة','نظارة','محفظة','تكييف','مكواة','شمسية','ساعة','عجلة','موتوسيكل']
+        };
+
+        let pList = [], curr = 0, secretWord = '', impIdx = -1;
+
+        function play() { document.getElementById('clickS').currentTime = 0; document.getElementById('clickS').play(); }
+
+        function addPlayerInput() {
+            const container = document.getElementById('players-list');
+            const row = document.createElement('div');
+            row.className = 'p-row';
+            row.innerHTML = '<input type="text" class="p-name" placeholder="اسم اللاعب"> <button class="del-btn" onclick="this.parentElement.remove(); play();">❌</button>';
+            container.appendChild(row);
+        }
+
+        function startApp() {
+            pList = [];
+            document.querySelectorAll('.p-name').forEach(i => { if(i.value.trim()) pList.push(i.value.trim()); });
+            if(pList.length < 3) { alert("اكتب 3 أسامي على الأقل يا Falcon!"); return; }
+            showStep('step2');
+        }
+
+        function pick(c) {
+            const list = library[c];
+            secretWord = list[Math.floor(Math.random() * list.length)];
+            impIdx = Math.floor(Math.random() * pList.length);
+            curr = 0; showTurn();
+        }
+
+        function showTurn() {
+            showStep('step3');
+            document.getElementById('curr-p').innerText = "ادي الموبايل لـ: " + pList[curr];
+        }
+
+        function showWord() {
+            showStep('step4');
+            const box = document.getElementById('word-disp');
+            box.innerHTML = (curr === impIdx) ? "<span style='color:#f43f5e;'>أنت الأمبوستر..</span><br>ريح أنت علي جنب 😎" : "الكلمة هي:<br><span style='color:#38bdf8;'>" + secretWord + "</span>";
+        }
+
+        function nextP() {
+            curr++;
+            if(curr < pList.length) { showTurn(); } 
+            else { showStep('step5'); startTimer(); }
+        }
+
+        function startTimer() {
+            let t = 60;
+            let timer = setInterval(() => {
+                t--; document.getElementById('timer-box').innerText = t;
+                if(t <= 0) { clearInterval(timer); document.getElementById('laughS').play(); }
+            }, 1000);
+        }
+
+        function showStep(id) {
+            ['step1','step2','step3','step4','step5'].forEach(s => document.getElementById(s).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
